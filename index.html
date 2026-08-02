@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毒がある？生き物＆植物クイズ</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --poison-color: #e74c3c;
+            --safe-color: #2ecc71;
+            --bg-color: #f4f6f8;
+        }
+        body {
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            padding: 25px;
+            width: 90%;
+            max-width: 520px;
+            text-align: center;
+            position: relative;
+        }
+        h1 {
+            color: var(--primary-color);
+            font-size: 20px;
+            margin: 0 0 5px 0;
+        }
+        .score-board {
+            font-size: 15px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #222;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .category-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.3s;
+        }
+        .loading-spinner {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .creature-name {
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px 10px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+        }
+        .btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.15);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-poison {
+            background-color: var(--poison-color);
+            color: white;
+        }
+        .btn-safe {
+            background-color: var(--safe-color);
+            color: white;
+        }
+        .result-container {
+            margin-top: 15px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-title {
+            font-weight: 900;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+        .explanation {
+            font-size: 13px;
+            color: #333;
+            text-align: left;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .next-btn, .restart-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .next-btn:hover, .restart-btn:hover {
+            background-color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="quiz-area">
+        <h1>毒はある？</h1>
+        <div id="score-board" class="score-board">第 1 問 / 全 10 問</div>
+        <div class="progress-bar-bg">
+            <div id="progress-bar" class="progress-bar-fill"></div>
+        </div>
+        
+        <div class="image-wrapper">
+            <div id="category-badge" class="category-badge">カテゴリー</div>
+            <div id="loading" class="loading-spinner">Wikipediaから画像を読み込み中...</div>
+            <img id="creature-img" src="" alt="出題画像" style="display: none;">
+        </div>
+        <div id="creature-name" class="creature-name">名前</div>
+        
+        <div class="btn-container">
+            <button class="btn btn-poison" id="btn-poison" onclick="answer(true)">💀 毒あり</button>
+            <button class="btn btn-safe" id="btn-safe" onclick="answer(false)">🟢 毒なし</button>
+        </div>
+        
+        <div id="result" class="result-container">
+            <div id="result-text" class="result-title"></div>
+            <div id="explanation-text" class="explanation"></div>
+            <button class="next-btn" onclick="nextQuestion()">次の問題へ進む ➔</button>
+        </div>
+    </div>
+
+    <!-- 最終結果エリア -->
+    <div id="final-result-area" style="display: none;">
+        <h2>🎉 クイズ終了！</h2>
+        <p id="final-score" style="font-size: 42px; font-weight: 900; color: #2c3e50; margin: 15px 0;"></p>
+        <p id="rank-message" style="font-size: 18px; font-weight: bold; color: #e67e22; margin-bottom: 30px;"></p>
+        <button class="restart-btn" onclick="restartQuiz()">🔄 もう一度挑戦する（ランダム10問）</button>
+    </div>
+</div>
+
+<script>
+    // 100問のマスターデータ（カエル・魚・植物）
+    const masterData = [
+        // --- カエル類 ---
+        { category: "カエル 🐸", wikiTitle: "モウドクフキヤガエル", hasPoison: true, note: "世界最強クラスの神経毒（バトラコトキシン）を持ちます。" },
+        { category: "カエル 🐸", wikiTitle: "ニホンアマガエル", hasPoison: true, note: "皮膚の粘液に毒があり、目に入ると激痛を起こします。" },
+        { category: "カエル 🐸", wikiTitle: "アズマヒキガエル", hasPoison: true, note: "耳腺からブフォトキシンという有毒成分を出します。" },
+        { category: "カエル 🐸", wikiTitle: "キオビヤドクガエル", hasPoison: true, note: "鮮やかな黄黒模様を持つ有名な有毒ガエルです。" },
+        { category: "カエル 🐸", wikiTitle: "マダラヤドクガエル", hasPoison: true, note: "美しい斑点模様を持ちますが、皮膚に強毒を持っています。" },
+        { category: "カエル 🐸", wikiTitle: "コバルトヤドクガエル", hasPoison: true, note: "鮮やかな青色をした代表的な毒ガエルです。" },
+        { category: "カエル 🐸", wikiTitle: "ナガレヒキガエル", hasPoison: true, note: "ヒキガエルの仲間で、白い粘液状の毒を出します。" },
+        { category: "カエル 🐸", wikiTitle: "トノサマガエル", hasPoison: false, note: "日本の田んぼでおなじみの無毒なカエルです。" },
+        { category: "カエル 🐸", wikiTitle: "ウシガエル", hasPoison: false, note: "大きな鳴き声の大型カエル。毒はありません。" },
+        { category: "カエル 🐸", wikiTitle: "ベルツノガエル", hasPoison: false, note: "ペットとして人気の丸いカエル。毒はありません。" },
+        { category: "カエル 🐸", wikiTitle: "シュレーゲルアオガエル", hasPoison: false, note: "美しい緑色の木登りカエル。毒はありません。" },
+        { category: "カエル 🐸", wikiTitle: "モリアオガエル", hasPoison: false, note: "泡状の卵を木の上に産む無毒なカエルです。" },
+        { category: "カエル 🐸", wikiTitle: "カジカガエル", hasPoison: false, note: "美しい鳴き声で知られる渓流のカエルです。" },
+        { category: "カエル 🐸", wikiTitle: "イシカワガエル", hasPoison: false, note: "「日本一美しい」とされる絶滅危惧種のカエルです。" },
+        { category: "カエル 🐸", wikiTitle: "アフリカツメガエル", hasPoison: false, note: "実験動物としても有名な完全水生のカエルです。" },
+        { category: "カエル 🐸", wikiTitle: "ヤマアカガエル", hasPoison: false, note: "山地にすむ茶色いカエル。毒はありません。" },
+
+        // --- 魚・海洋生物 ---
+        { category: "魚 🐟", wikiTitle: "クサフグ", hasPoison: true, note: "強烈なテトロドトキシンを体内に持っています。" },
+        { category: "魚 🐟", wikiTitle: "トラフグ", hasPoison: true, note: "高級魚ですが、卵巣や肝臓に猛毒を持ちます。" },
+        { category: "魚 🐟", wikiTitle: "ハコフグ", hasPoison: true, note: "皮膚からパハトキシンという毒粘液を分泌します。" },
+        { category: "魚 🐟", wikiTitle: "ソウシハギ", hasPoison: true, note: "内臓にフグの50倍とも言われるパヒトキシンを含みます。" },
+        { category: "魚 🐟", wikiTitle: "ミノカサゴ", hasPoison: true, note: "ヒレの棘（トゲ）に激痛をともなう毒を持っています。" },
+        { category: "魚 🐟", wikiTitle: "オニオコゼ", hasPoison: true, note: "背びれのトゲに強いタンパク毒を持っています。" },
+        { category: "魚 🐟", wikiTitle: "オニダルマオコゼ", hasPoison: true, note: "岩そっくりで踏むと危険。死亡例もある猛毒魚です。" },
+        { category: "魚 🐟", wikiTitle: "ゴンズイ", hasPoison: true, note: "背びれと胸びれのトゲに強い毒を持っています。" },
+        { category: "魚 🐟", wikiTitle: "アイゴ", hasPoison: true, note: "各ヒレのトゲに激痛を起こす毒を持っています。" },
+        { category: "魚 🐟", wikiTitle: "アカエイ", hasPoison: true, note: "尻尾に毒棘があり、刺されると激痛や呼吸困難を起こします。" },
+        { category: "魚 🐟", wikiTitle: "ネコザメ", hasPoison: true, note: "背びれの前にあるトゲに毒腺を持っています。" },
+        { category: "魚 🐟", wikiTitle: "ツムギハゼ", hasPoison: true, note: "ハゼの仲間ですが、フグと同じテトロドトキシンを含みます。" },
+        { category: "魚 🐟", wikiTitle: "ヒョウモンダコ", hasPoison: true, note: "小さなタコですが噛まれると死亡する猛毒を持ちます。" },
+        { category: "魚 🐟", wikiTitle: "ハブクラゲ", hasPoison: true, note: "沖縄などに生息する強力な刺毒を持つクラゲです。" },
+        { category: "魚 🐟", wikiTitle: "カツオノエボシ", hasPoison: true, note: "電気クラゲとも呼ばれる激痛を起こす有毒生物です。" },
+        { category: "魚 🐟", wikiTitle: "マダイ", hasPoison: false, note: "トゲは刺さると痛いですが毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "マアジ", hasPoison: false, note: "食卓でおなじみの魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "ヒラメ", hasPoison: false, note: "刺身などで人気のおいしい無毒な魚です。" },
+        { category: "魚 🐟", wikiTitle: "サンマ", hasPoison: false, note: "秋の味覚として有名。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "サケ", hasPoison: false, note: "川をのぼる魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "カクレクマノミ", hasPoison: false, note: "イソギンチャクと共生する人気の観賞魚です。" },
+        { category: "魚 🐟", wikiTitle: "ナンヨウハギ", hasPoison: false, note: "青い体が特徴の鮮やかな魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "タツノオトシゴ", hasPoison: false, note: "独特な形をした魚の仲間。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "マンボウ", hasPoison: false, note: "ゆったり泳ぐ巨大な魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "コバンザメ", hasPoison: false, note: "頭の吸盤で大物に張り付く魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "ホオジロザメ", hasPoison: false, note: "鋭い歯は危険ですが、毒腺はありません。" },
+        { category: "魚 🐟", wikiTitle: "アンコウ", hasPoison: false, note: "グロテスクな見た目ですが美味しい無毒な魚です。" },
+        { category: "魚 🐟", wikiTitle: "トビウオ", hasPoison: false, note: "水面を飛ぶ魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "メダカ", hasPoison: false, note: "身近な小魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "キンギョ", hasPoison: false, note: "観賞魚として広く親しまれています。" },
+        { category: "魚 🐟", wikiTitle: "グッピー", hasPoison: false, note: "カラフルな熱帯魚。毒はありません。" },
+        { category: "魚 🐟", wikiTitle: "ウツボ", hasPoison: false, note: "鋭い歯で噛みつきますが、毒腺はありません。" },
+        { category: "魚 🐟", wikiTitle: "ハタハタ", hasPoison: false, note: "秋田県などで有名な美味しい魚です。" },
+        { category: "魚 🐟", wikiTitle: "シシャモ", hasPoison: false, note: "子持ちで有名な美味しい魚です。" },
+
+        // --- 草・植物 ---
+        { category: "草 (植物) 🌿", wikiTitle: "トリカブト", hasPoison: true, note: "日本最強クラスの毒草。アコニチン毒を含みます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "スズラン", hasPoison: true, note: "全草（特に花や根）に強烈な心臓毒を含みます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "スイセン", hasPoison: true, note: "葉がニラに非常に似ていますが有毒です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ヒガンバナ", hasPoison: true, note: "球根などに吐き気や麻痺を起こす毒を含みます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ドクゼリ", hasPoison: true, note: "日本三大毒草の一つ。セリと誤食されやすいです。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ドクウツギ", hasPoison: true, note: "日本三大毒草の一つ。赤い実も有毒です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "チョウセンアサガオ", hasPoison: true, note: "幻覚や麻痺を起こすアルカロイドを含みます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "キョウチクトウ", hasPoison: true, note: "枝を箸代わりにしても中毒を起こす強毒植物です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "アジサイ", hasPoison: true, note: "葉を食べると中毒を起こす成分を含んでいます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ポインセチア", hasPoison: true, note: "樹液にかぶれや皮膚炎を起こす成分を含みます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "アセビ", hasPoison: true, note: "馬が食べると酔ったようになることから「馬酔木」と書きます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "イラクサ", hasPoison: true, note: "トゲにヒスタミン等の毒があり触ると痛みます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ソテツ", hasPoison: true, note: "種子や幹にサイカシンという発がん性毒を含みます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "イチョウ", hasPoison: true, note: "ギンナンは食べ過ぎると神経毒で中毒を起こします。" },
+        { category: "草 (植物) 🌿", wikiTitle: "イヌサフラン", hasPoison: true, note: "ギョウジャニンニクと間違えて誤食される猛毒草です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "マムシグサ", hasPoison: true, note: "サトイモ科で、シュウ酸カルシウム結晶により激痛が走ります。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ドクニンジン", hasPoison: true, note: "ソクラテスの処刑にも使われた歴史的猛毒草です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ヨモギ", hasPoison: false, note: "草餅に使われる安全で健康的な野草です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "タンポポ", hasPoison: false, note: "葉はサラダ、根はコーヒーにも使えます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ドクダミ", hasPoison: false, note: "名前に「ドク」とつきますが毒はなく、薬草茶になります。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ミツバ", hasPoison: false, note: "お吸い物などに使われる香りの良い野菜です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "オオバコ", hasPoison: false, note: "道端によくある草。生薬としても使われます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ナズナ", hasPoison: false, note: "春の七草（ペンペングサ）の一つ。安全です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ハコベ", hasPoison: false, note: "春の七草の一つ。小鳥のエサにもなります。" },
+        { category: "草 (植物) 🌿", wikiTitle: "スギナ", hasPoison: false, note: "つくしの親。お茶として利用されます。" },
+        { category: "草 (植物) 🌿", wikiTitle: "シロツメクサ", hasPoison: false, note: "花冠を作るクローバー。毒はありません。" },
+        { category: "草 (植物) 🌿", wikiTitle: "オオイヌノフグリ", hasPoison: false, note: "青い小さな花を咲かせる一般的な野草です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ペパーミント", hasPoison: false, note: "スーッとするハーブ。安全です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ラベンダー", hasPoison: false, note: "リラックス効果のある有名なハーブです。" },
+        { category: "草 (植物) 🌿", wikiTitle: "バジル", hasPoison: false, note: "イタリア料理でおなじみのハーブです。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ローズマリー", hasPoison: false, note: "肉料理などに使われる香辛料です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "カタバミ", hasPoison: false, note: "ハート型の葉っぱを持つ身近な野草です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "ツワブキ", hasPoison: false, note: "アク抜きをして食用にされる常緑の植物です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "パセリ", hasPoison: false, note: "料理の彩りに使われる栄養豊富な野菜です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "クレソン", hasPoison: false, note: "ステーキの付け合わせなどに使われる水草です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "サンショウ", hasPoison: false, note: "うなぎの薬味などに使われる日本のハーブです。" },
+        { category: "草 (植物) 🌿", wikiTitle: "シソ", hasPoison: false, note: "和風ハーブとして広く食べられています。" },
+        { category: "草 (植物) 🌿", wikiTitle: "セリ", hasPoison: false, note: "春の七草の一つ。美味しい野草です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "アシタバ", hasPoison: false, note: "青汁の原料にもなる健康的な野菜です。" },
+        { category: "草 (植物) 🌿", wikiTitle: "フキノトウ", hasPoison: false, note: "春の山菜。天ぷらなどで美味しく食べられます。" }
+    ];
+
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let currentWikiExtract = "";
+
+    function shuffleArray(array) {
+        const clone = [...array];
+        for (let i = clone.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [clone[i], clone[j]] = [clone[j], clone[i]];
+        }
+        return clone;
+    }
+
+    function initQuiz() {
+        const shuffled = shuffleArray(masterData);
+        currentQuestions = shuffled.slice(0, 10); // 毎回ランダムに10問を抽出
+        currentQuestionIndex = 0;
+        score = 0;
+        loadQuestion();
+    }
+
+    async function loadQuestion() {
+        const currentQuiz = currentQuestions[currentQuestionIndex];
+        
+        document.getElementById('score-board').innerText = `第 ${currentQuestionIndex + 1} 問 / 全 ${currentQuestions.length} 問`;
+        const progressPercent = (currentQuestionIndex / currentQuestions.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+        document.getElementById('category-badge').innerText = currentQuiz.category;
+        document.getElementById('creature-name').innerText = currentQuiz.wikiTitle;
+        
+        document.getElementById('loading').innerText = "Wikipediaから画像を読み込み中...";
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('creature-img').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+        
+        document.getElementById('btn-poison').disabled = true;
+        document.getElementById('btn-safe').disabled = true;
+
+        try {
+            const response = await fetch(`https://ja.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(currentQuiz.wikiTitle)}`);
+            const data = await response.json();
+
+            if (data.thumbnail && data.thumbnail.source) {
+                const imgElement = document.getElementById('creature-img');
+                imgElement.src = data.thumbnail.source;
+                imgElement.onload = () => {
+                    document.getElementById('loading').style.display = 'none';
+                    imgElement.style.display = 'block';
+                };
+            } else {
+                document.getElementById('loading').innerText = '🖼 画像が見つかりませんでした';
+            }
+
+            currentWikiExtract = data.extract || "説明を取得できませんでした。";
+
+            document.getElementById('btn-poison').disabled = false;
+            document.getElementById('btn-safe').disabled = false;
+
+        } catch (error) {
+            console.error('Wikipedia API Error:', error);
+            document.getElementById('loading').innerText = '⚠️ データの取得に失敗しました';
+            document.getElementById('btn-poison').disabled = false;
+            document.getElementById('btn-safe').disabled = false;
+        }
+    }
+
+    function answer(userAnswer) {
+        const currentQuiz = currentQuestions[currentQuestionIndex];
+        const resultContainer = document.getElementById('result');
+        const resultText = document.getElementById('result-text');
+        const explanationText = document.getElementById('explanation-text');
+        
+        document.getElementById('btn-poison').disabled = true;
+        document.getElementById('btn-safe').disabled = true;
+
+        if (userAnswer === currentQuiz.hasPoison) {
+            resultText.innerText = "⭕️ 大正解！";
+            resultContainer.className = "result-container correct";
+            score++;
+        } else {
+            resultText.innerText = "❌ ザンネン...";
+            resultContainer.className = "result-container incorrect";
+        }
+
+        explanationText.innerHTML = `<strong>【ワンポイント】</strong> ${currentQuiz.note}<br><br><strong>【Wikipedia概要】</strong><br>${currentWikiExtract}`;
+        resultContainer.style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < currentQuestions.length) {
+            loadQuestion();
+        } else {
+            showFinalResult();
+        }
+    }
+
+    function showFinalResult() {
+        document.getElementById('quiz-area').style.display = 'none';
+        const finalResultArea = document.getElementById('final-result-area');
+        finalResultArea.style.display = 'block';
+        
+        document.getElementById('final-score').innerText = `${score} / ${currentQuestions.length} 点`;
+        
+        let rankMsg = "";
+        if (score === 10) {
+            rankMsg = "🏆 満点！あなたは完璧な毒物・生き物マスターです！";
+        } else if (score >= 7) {
+            rankMsg = "🌟 すごい！自然界の危険を見事に見抜けています！";
+        } else if (score >= 4) {
+            rankMsg = "👍 まずまず！身近な生き物にも意外な毒があるから気をつけよう。";
+        } else {
+            rankMsg = "⚠️ 危険かも！？もう一度挑戦して覚えてみよう！";
+        }
+        document.getElementById('rank-message').innerText = rankMsg;
+    }
+
+    function restartQuiz() {
+        document.getElementById('quiz-area').style.display = 'block';
+        document.getElementById('final-result-area').style.display = 'none';
+        initQuiz();
+    }
+
+    initQuiz();
+</script>
+
+</body>
+</html>
